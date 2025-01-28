@@ -6,10 +6,6 @@ from db import *
 
 from decouple import config
 
-from random import shuffle
-
-import os
-
 token = config('token', default='(')
 
 bot = telebot.TeleBot(token)
@@ -56,7 +52,7 @@ def pass_reg(message):
                          "Такой пользователь уже существует\nвведите любой текст для повторной попытки")
         bot.register_next_step_handler(message, name_reg)
     else:
-        bot.send_message(message.chat.id, 'Введите пароль:')
+        bot.send_message(message.chat.id, 'Введите ссылку сборов ВТБ:')
         bot.register_next_step_handler(message, reg_to_db)
 
 
@@ -66,8 +62,7 @@ def reg_to_db(message):
         bot.send_message(message.chat.id, 'ой', reply_markup=s_markup)
         return
     user_login = bot.get_state(message.from_user.id)
-    user_to_db(user_login, hash_password(message.text), message.chat.id)
-    bot.delete_message(message.chat.id, message.id)
+    user_to_db(user_login, message.text, message.chat.id)
 
     bot.send_message(message.chat.id, f'Вы успешно зарегистрированы!',
                      reply_markup=s_markup)
@@ -99,7 +94,7 @@ def pay_dolg(message):
     for i in dolgi(user(message.chat.id)):
         keyboard.add(types.InlineKeyboardButton(text=f'{i[1]}у - {i[2]} руб.', callback_data=i[0]))
 
-    bot.send_message(message.from_user.id, "какой долг погасили?",reply_markup=keyboard)
+    bot.send_message(message.from_user.id, "какой долг погасить?",reply_markup=keyboard)
 
 
 
@@ -116,6 +111,8 @@ def callback_inline(call):
         elif all(map(str.isdigit, call.data)):
             d = dolg(int(call.data))
             bot.delete_message(call.message.chat.id, call.message.id)
+
+            bot.send_message(call.message.chat.id, link(d[1]), reply_markup=s_markup)
             bot.send_message(call.message.chat.id, f"{d[1]}у был отправлен запрос", reply_markup=s_markup)
 
             yes = types.InlineKeyboardButton(text='да', callback_data='yes '+call.data)

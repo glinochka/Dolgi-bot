@@ -1,23 +1,5 @@
 from mysql.connector import connect, Error
 from decouple import config
-import uuid
-import hashlib
-
-
-def hash_password(password):
-    salt = uuid.uuid4().hex
-    return hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ':' + salt
-
-
-# проверка пароля
-def check_password(hashed_password, user_password):
-    password, salt = hashed_password.split(':')
-    return password == hashlib.sha256(salt.encode() + user_password.encode()).hexdigest()
-
-
-upper_set = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-lower_set = set('abcdefghijklmnopqrstuvwxyz')
-digit_set = set('1234567890')
 
 
 
@@ -37,19 +19,31 @@ def conn():
         print(e)
         return False
 # внесение в бд нового юзера если юзер с таким ником уже есть возвращает False, если у юзера не было tg_id, добавляет
-def user_to_db(name, password, chat_id):
+def user_to_db(name, link, chat_id):
     cnct = conn()
 
     if cnct:
         command = f'''
-            INSERT INTO users(name,password,chat_id)
-            VALUE('{name}','{password}',{chat_id})
+            INSERT INTO users(name,link,chat_id)
+            VALUE('{name}','{link}',{chat_id})
             '''
 
         with cnct.cursor() as cur:
             cur.execute(command)
             cnct.commit()
 
+def link(name):
+    cnct = conn()
+
+    if cnct:
+        command = f'''
+            SELECT link FROM USERS where name = '{name}' limit 1
+            '''
+
+        with cnct.cursor() as cur:
+            cur.execute(command)
+            link_ = [i[0] for i in cur.fetchall()]
+        return link_[0]
 
 def users():
     cnct = conn()
